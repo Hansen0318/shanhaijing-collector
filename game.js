@@ -80,3 +80,37 @@ document.querySelector(".zoom-controls").addEventListener("click",event => {
 });
 status.textContent = monsters[0].region + " · " + monsters[0].hint;
 setZoom(1); requestAnimationFrame(draw);
+
+canvas.addEventListener("click", event => {
+  const p = point(event);
+  const fox = monsters[0];
+
+  const distance = Math.hypot(
+    p.x - (camera.x + fox.position.x * camera.zoom),
+    p.y - (camera.y + fox.position.y * camera.zoom)
+  );
+
+  if (distance < 70) {
+    status.textContent = "發現九尾狐！";
+
+    const message = document.createElement("div");
+    message.textContent = "🦊 發現九尾狐！";
+    message.style.position = "absolute";
+    message.style.left = "50%";
+    message.style.top = "50%";
+    message.style.transform = "translate(-50%, -50%)";
+    message.style.padding = "18px 24px";
+    message.style.borderRadius = "16px";
+    message.style.background = "rgba(8,25,19,.92)";
+    message.style.color = "#fff4cf";
+    message.style.fontSize = "22px";
+    message.style.fontWeight = "700";
+    message.style.zIndex = "10";
+
+    document.querySelector(".scene-frame").appendChild(message);
+
+    setTimeout(() => {
+      message.remove();
+    }, 1800);
+  }
+});
