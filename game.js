@@ -1,4 +1,4 @@
-import { monsters } from "./data/monsters.js";
+import { monsters, activeMonsters } from "./data/monsters.js";
 
 const canvas = document.querySelector("#game-canvas");
 const ctx = canvas.getContext("2d");
@@ -13,6 +13,7 @@ const pointers = new Map();
 let drag = null;
 let pinch = null;
 let suppressClick = false;
+const discoveredMonsters = new Set();
 
 function point(event) {
   const rect = canvas.getBoundingClientRect();
@@ -133,27 +134,63 @@ function draw(now = 0) {
     ctx.fillRect(x - 6, y + 10, 12, 48);
   }
 
-  const fox = monsters[0];
-  const pulse = 40 + Math.sin(now / 500) * 5;
+  // Data-driven exploration markers.
+  // At lower zoom, only subtle clues appear.
+  // At deeper zoom, the creature's trail becomes discoverable.
+  for (const monster of activeMonsters) {
+    if (monster.position.x === 0 && monster.position.y === 0) continue;
 
-  ctx.strokeStyle = "rgba(255,236,151,.85)";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(fox.position.x, fox.position.y, pulse, 0, Math.PI * 2);
-  ctx.stroke();
+    const isDiscovered = discoveredMonsters.has(monster.id);
 
-  ctx.fillStyle = "#ffe695";
-  ctx.beginPath();
-  ctx.arc(fox.position.x, fox.position.y, 8, 0, Math.PI * 2);
-  ctx.fill();
+    if (camera.zoom >= monster.clueZoom && camera.zoom < monster.discoveryZoom) {
+      const pulse = 18 + Math.sin(now / 450 + monster.position.x) * 3;
 
-  ctx.fillStyle = "rgba(8,25,19,.72)";
-  ctx.fillRect(fox.position.x - 78, fox.position.y + 48, 156, 38);
+      ctx.strokeStyle = "rgba(255,236,151,.45)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(monster.position.x, monster.position.y, pulse, 0, Math.PI * 2);
+      ctx.stroke();
 
-  ctx.fillStyle = "#fff4cf";
-  ctx.font = "600 17px system-ui";
-  ctx.textAlign = "center";
-  ctx.fillText("妖獸蹤跡", fox.position.x, fox.position.y + 73);
+      ctx.fillStyle = "rgba(255,236,151,.9)";
+      ctx.beginPath();
+      ctx.arc(monster.position.x, monster.position.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (camera.zoom >= monster.discoveryZoom) {
+      const pulse = 28 + Math.sin(now / 500 + monster.position.y) * 4;
+
+      ctx.strokeStyle = isDiscovered
+        ? "rgba(255,236,151,.95)"
+        : "rgba(255,236,151,.72)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(monster.position.x, monster.position.y, pulse, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = isDiscovered ? "#ffe695" : "#fff0ae";
+      ctx.beginPath();
+      ctx.arc(monster.position.x, monster.position.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(8,25,19,.78)";
+      ctx.fillRect(
+        monster.position.x - 78,
+        monster.position.y + 48,
+        156,
+        38
+      );
+
+      ctx.fillStyle = "#fff4cf";
+      ctx.font = "600 17px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText(
+        isDiscovered ? monster.name : "妖獸蹤跡",
+        monster.position.x,
+        monster.position.y + 73
+      );
+    }
+  }
 
   ctx.restore();
 
@@ -330,22 +367,30 @@ canvas.addEventListener("click", event => {
   if (suppressClick) return;
 
   const p = point(event);
-  const fox = monsters[0];
 
-  const foxScreenX = camera.x + fox.position.x * camera.zoom;
-  const foxScreenY = camera.y + fox.position.y * camera.zoom;
+  for (const monster of activeMonsters) {
+    if (monster.position.x === 0 && monster.position.y === 0) continue;
+    if (camera.zoom < monster.discoveryZoom) continue;
 
-  const hitRadius = Math.max(70, 55 * camera.zoom);
-  const distance = Math.hypot(
-    p.x - foxScreenX,
-    p.y - foxScreenY
-  );
+    const screenX =
+      camera.x + monster.position.x * camera.zoom;
+    const screenY =
+      camera.y + monster.position.y * camera.zoom;
 
-  if (distance < hitRadius) {
-    status.textContent = "發現九尾狐！";
+    const hitRadius = Math.max(70, 55 * camera.zoom);
+    const distance = Math.hypot(
+      p.x - screenX,
+      p.y - screenY
+    );
+
+    if (distance >= hitRadius) continue;
+
+    discoveredMonsters.add(monster.id);
+    status.textContent =
+      `發現${monster.name}！`;
 
     const message = document.createElement("div");
-    message.textContent = "🦊 發現九尾狐！";
+    message.textContent = `✨ 發現${monster.name}！`;
     message.style.position = "absolute";
     message.style.left = "50%";
     message.style.top = "50%";
@@ -364,6 +409,8 @@ canvas.addEventListener("click", event => {
     setTimeout(() => {
       message.remove();
     }, 1800);
+
+    break;
   }
 });
 
