@@ -29,6 +29,7 @@ let lastRegionId = null;
 let lastClueMonsterId = null;
 let statusTimer = null;
 let toastTimer = null;
+let cameraInitialized = false;
 
 function createDiscoveryToast() {
   discoveryToast = document.createElement("div");
@@ -112,10 +113,41 @@ function updateZoomReadout() {
 function fitWorldToViewport() {
   const w = Math.max(canvas.clientWidth, 1);
   const h = Math.max(canvas.clientHeight, 1);
-  const fitZoom = Math.min(w / world.width, h / world.height);
+  const isPortrait = h > w;
+
+  // 手機直向：以地圖高度填滿探索框，避免上下留下大面積空白。
+  // 桌面／橫向：仍以完整世界地圖為基準。
+  const fitZoom = isPortrait
+    ? h / world.height
+    : Math.min(w / world.width, h / world.height);
+
   camera.zoom = Math.max(limits.min, Math.min(limits.max, fitZoom));
   camera.x = (w - world.width * camera.zoom) / 2;
   camera.y = (h - world.height * camera.zoom) / 2;
+  clampCamera();
+  updateZoomReadout();
+  updateExplorationStatus();
+}
+
+function preserveCameraOnResize(previousWidth, previousHeight) {
+  const newWidth = Math.max(canvas.clientWidth, 1);
+  const newHeight = Math.max(canvas.clientHeight, 1);
+
+  if (!cameraInitialized || previousWidth === 0 || previousHeight === 0) {
+    fitWorldToViewport();
+    cameraInitialized = true;
+    return;
+  }
+
+  // Safari 的網址列展開／收起會改變 viewport 高度；不要因此重設鏡頭，
+  // 否則地圖會突然跳位或跳回最大／最小倍率。
+  const oldCenter = {
+    x: (previousWidth / 2 - camera.x) / camera.zoom,
+    y: (previousHeight / 2 - camera.y) / camera.zoom
+  };
+
+  camera.x = newWidth / 2 - oldCenter.x * camera.zoom;
+  camera.y = newHeight / 2 - oldCenter.y * camera.zoom;
   clampCamera();
   updateZoomReadout();
   updateExplorationStatus();
@@ -367,13 +399,29 @@ function drawMonsterMarkers(now) {
     ctx.arc(monster.position.x, monster.position.y, 7, 0, Math.PI * 2);
     ctx.fill();
 
+    const labelWidth = found ? 176 : 116;
+    const labelHeight = found ? 58 : 34;
     ctx.fillStyle = "rgba(8,25,19,.78)";
-    ctx.fillRect(monster.position.x - (found ? 78 : 58), monster.position.y + 44, found ? 156 : 116, found ? 38 : 34);
+    ctx.fillRect(
+      monster.position.x - labelWidth / 2,
+      monster.position.y + 44,
+      labelWidth,
+      labelHeight
+    );
 
     ctx.fillStyle = "#fff4cf";
-    ctx.font = found ? "600 17px system-ui" : "600 15px system-ui";
     ctx.textAlign = "center";
-    ctx.fillText(found ? monster.name : "異獸蹤跡", monster.position.x, monster.position.y + (found ? 69 : 66));
+
+    if (found) {
+      ctx.font = "600 18px system-ui";
+      ctx.fillText(`${monster.icon || "◈"}  ${monster.name}`, monster.position.x, monster.position.y + 68);
+      ctx.font = "500 12px system-ui";
+      ctx.fillStyle = "#c5d0c1";
+      ctx.fillText("已發現", monster.position.x, monster.position.y + 88);
+    } else {
+      ctx.font = "600 15px system-ui";
+      ctx.fillText("異獸蹤跡", monster.position.x, monster.position.y + 66);
+    }
   }
 }
 
@@ -398,10 +446,14 @@ function draw(now = 0) {
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const previousWidth = canvas.clientWidth;
+  const previousHeight = canvas.clientHeight;
+
   canvas.width = Math.max(1, Math.round(rect.width * ratio));
   canvas.height = Math.max(1, Math.round(rect.height * ratio));
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  fitWorldToViewport();
+
+  preserveCameraOnResize(previousWidth, previousHeight);
 }
 
 new ResizeObserver(resizeCanvas).observe(canvas);
@@ -427,7 +479,11 @@ function startPinch() {
 
 canvas.addEventListener("pointerdown", event => {
   event.preventDefault();
-  canvas.setPointerCapture(event.pointerId);
+  try {
+    canvas.setPointerCapture(event.pointerId);
+  } catch {
+    // Safari 某些情況下 pointer capture 可能失敗，不影響探索操作。
+  }
   const p = point(event);
   pointers.set(event.pointerId, p);
   if (pointers.size === 1) startDrag(event, p);
@@ -458,7 +514,8 @@ canvas.addEventListener("pointermove", event => {
     const centerX = (a.x + b.x) / 2;
     const centerY = (a.y + b.y) / 2;
     const distance = Math.max(Math.hypot(a.x - b.x, a.y - b.y), 1);
-    camera.zoom = Math.max(limits.min, Math.min(limits.max, pinch.zoom * (distance / pinch.distance)));
+    const scale = Math.min(3, Math.max(0.33, distance / pinch.distance));
+    camera.zoom = Math.max(limits.min, Math.min(limits.max, pinch.zoom * scale));
     camera.x = centerX - pinch.worldCenter.x * camera.zoom;
     camera.y = centerY - pinch.worldCenter.y * camera.zoom;
     clampCamera();
@@ -478,12 +535,17 @@ function releasePointer(event) {
     drag = null;
     pinch = null;
     canvas.classList.remove("is-dragging");
-    setTimeout(() => { suppressClick = false; }, 80);
+    setTimeout(() => { suppressClick = false; }, 120);
   }
 }
 
 canvas.addEventListener("pointerup", releasePointer);
 canvas.addEventListener("pointercancel", releasePointer);
+
+// Safari 可能同時啟動原生手勢；遊戲自己處理 pinch，因此阻止瀏覽器的第二套縮放手勢。
+for (const eventName of ["gesturestart", "gesturechange", "gestureend"]) {
+  canvas.addEventListener(eventName, event => event.preventDefault(), { passive: false });
+}
 
 canvas.addEventListener("wheel", event => {
   event.preventDefault();
