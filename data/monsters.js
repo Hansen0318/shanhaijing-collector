@@ -1,31 +1,49 @@
-// 山海經妖獸資料
-// 正式版可把 icon 改成 image 資產；目前保留 Emoji 作為測試 placeholder。
-// regionId 對應 game.js 的《山海經》地區。
+// 《山海經：青丘尋獸》妖獸與世界資料
+// region polygon 是正式世界地圖的邏輯配置；之後替換精美地圖 Asset 時沿用同一套座標。
+// active=true 的妖獸目前可在地圖上探索。
 
 export const regions = [
   {
     id: "qingqiu-country",
     name: "青丘之國",
-    description: "古老的狐族傳說，似乎仍留在這片土地。",
-    bounds: { x: 0, y: 0, width: 620, height: 1100 }
+    description: "丘陵與溪谷相連，古老的狐族傳說仍留在這片土地。",
+    polygon: [
+      { x: 0, y: 0 }, { x: 920, y: 0 }, { x: 1120, y: 360 },
+      { x: 1030, y: 610 }, { x: 760, y: 820 }, { x: 960, y: 1010 },
+      { x: 0, y: 1010 }
+    ],
+    terrain: "hills"
   },
   {
     id: "mingxing-mountain",
     name: "明星之山",
-    description: "山林深處傳來不尋常的灼熱氣息。",
-    bounds: { x: 620, y: 0, width: 420, height: 1100 }
+    description: "山嶺高聳，岩壁間殘留著不尋常的灼熱氣息。",
+    polygon: [
+      { x: 920, y: 0 }, { x: 1800, y: 0 }, { x: 1800, y: 540 },
+      { x: 1510, y: 590 }, { x: 1300, y: 620 }, { x: 1120, y: 360 }
+    ],
+    terrain: "mountains"
   },
   {
     id: "east-extreme",
     name: "東極",
-    description: "天地交界之處，遠方似乎有異獸留下的痕跡。",
-    bounds: { x: 1040, y: 0, width: 320, height: 1100 }
+    description: "天地交界之處，視野開闊，遠方似有異獸留下痕跡。",
+    polygon: [
+      { x: 1300, y: 620 }, { x: 1510, y: 590 },
+      { x: 1800, y: 540 }, { x: 1800, y: 960 }, { x: 1540, y: 1030 },
+      { x: 960, y: 1010 }, { x: 1180, y: 820 }
+    ],
+    terrain: "open"
   },
   {
     id: "great-wilderness",
     name: "大荒之野",
-    description: "荒野無邊，古老的氣息從遠方緩緩靠近。",
-    bounds: { x: 1360, y: 0, width: 240, height: 1100 }
+    description: "荒野無邊，古老的氣息自天際緩緩逼近。",
+    polygon: [
+      { x: 0, y: 1010 }, { x: 960, y: 1010 }, { x: 1540, y: 1030 },
+      { x: 1800, y: 960 }, { x: 1800, y: 1200 }, { x: 0, y: 1200 }
+    ],
+    terrain: "wilderness"
   }
 ];
 
@@ -36,7 +54,7 @@ export const monsters = [
     icon: "🦊",
     regionId: "qingqiu-country",
     position: { x: 1160, y: 650 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.35,
     discoveryZoom: 2.0,
@@ -52,7 +70,7 @@ export const monsters = [
     icon: "🐦",
     regionId: "mingxing-mountain",
     position: { x: 1420, y: 300 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.55,
     discoveryZoom: 2.35,
@@ -68,7 +86,7 @@ export const monsters = [
     icon: "🦌",
     regionId: "qingqiu-country",
     position: { x: 520, y: 820 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.75,
     discoveryZoom: 2.65,
@@ -84,7 +102,7 @@ export const monsters = [
     icon: "🐉",
     regionId: "east-extreme",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.8,
     discoveryZoom: 2.7,
@@ -100,7 +118,7 @@ export const monsters = [
     icon: "🐐",
     regionId: "great-wilderness",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.8,
     discoveryZoom: 2.7,
@@ -116,7 +134,7 @@ export const monsters = [
     icon: "🐯",
     regionId: "great-wilderness",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.9,
     discoveryZoom: 2.7,
@@ -132,7 +150,7 @@ export const monsters = [
     icon: "🐃",
     regionId: "east-extreme",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.9,
     discoveryZoom: 2.7,
@@ -148,7 +166,7 @@ export const monsters = [
     icon: "🦅",
     regionId: "mingxing-mountain",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 2.0,
     discoveryZoom: 2.8,
@@ -164,7 +182,7 @@ export const monsters = [
     icon: "🐗",
     regionId: "great-wilderness",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 2.0,
     discoveryZoom: 2.8,
@@ -180,7 +198,7 @@ export const monsters = [
     icon: "🦁",
     regionId: "mingxing-mountain",
     position: { x: 0, y: 0 },
-    clueRadius: 190,
+    clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.8,
     discoveryZoom: 2.7,
