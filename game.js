@@ -10,10 +10,14 @@ const collectionProgress = document.querySelector("#collection-progress");
 const zoomControls = document.querySelector(".zoom-controls");
 const collectionButton = document.querySelector("#collection-button");
 const collectionClose = document.querySelector("#collection-close");
+let discoveryToast = null;
+let discoveryIcon = null;
+let discoveryTitle = null;
+let discoveryText = null;
 
 const world = { width: 1800, height: 1200 };
-const camera = { x: -420, y: -300, zoom: 1 };
-const limits = { min: 0.65, max: 2.8 };
+const camera = { x: 0, y: 0, zoom: 1 };
+const limits = { min: 0.24, max: 2.8 };
 const DEV_MODE = new URLSearchParams(location.search).get("dev") === "1";
 const storageKey = "shanhaijing-collector-discovered";
 
@@ -24,6 +28,36 @@ let suppressClick = false;
 let lastRegionId = null;
 let lastClueMonsterId = null;
 let statusTimer = null;
+let toastTimer = null;
+
+function createDiscoveryToast() {
+  discoveryToast = document.createElement("div");
+  discoveryToast.className = "discovery-toast";
+  discoveryToast.hidden = true;
+  discoveryToast.innerHTML = `
+    <div class="discovery-icon"></div>
+    <div>
+      <div class="discovery-title"></div>
+      <div class="discovery-text"></div>
+    </div>
+  `;
+  discoveryIcon = discoveryToast.querySelector(".discovery-icon");
+  discoveryTitle = discoveryToast.querySelector(".discovery-title");
+  discoveryText = discoveryToast.querySelector(".discovery-text");
+  const scene = document.querySelector(".scene-frame");
+  scene.appendChild(discoveryToast);
+
+  const style = document.createElement("style");
+  style.textContent = `
+    .discovery-toast{position:absolute;left:50%;top:50%;z-index:10;width:min(82%,330px);transform:translate(-50%,-46%) scale(.94);display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:14px 16px;border:1px solid rgba(225,191,110,.6);border-radius:18px;background:rgba(7,25,20,.94);box-shadow:0 18px 42px rgba(0,0,0,.42);opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+    .discovery-toast[hidden]{display:none}
+    .discovery-toast.is-visible{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    .discovery-icon{width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:rgba(225,191,110,.13);font-size:2rem}
+    .discovery-title{font-weight:800;font-size:1.08rem;color:#fff4cf}
+    .discovery-text{margin-top:3px;color:#b9c9bb;font:.76rem system-ui}
+  `;
+  document.head.appendChild(style);
+}
 
 function loadDiscovered() {
   if (DEV_MODE) return new Set();
@@ -73,6 +107,22 @@ function clampCamera() {
 
 function updateZoomReadout() {
   readout.textContent = `${Math.round(camera.zoom * 100)}%`;
+}
+
+function fitWorldToViewport() {
+  const w = Math.max(canvas.clientWidth, 1);
+  const h = Math.max(canvas.clientHeight, 1);
+  const fitZoom = Math.min(w / world.width, h / world.height);
+  camera.zoom = Math.max(limits.min, Math.min(limits.max, fitZoom));
+  camera.x = (w - world.width * camera.zoom) / 2;
+  camera.y = (h - world.height * camera.zoom) / 2;
+  clampCamera();
+  updateZoomReadout();
+  updateExplorationStatus();
+}
+
+function resetCameraToWorld() {
+  fitWorldToViewport();
 }
 
 function setZoom(zoom, sx = canvas.clientWidth / 2, sy = canvas.clientHeight / 2) {
@@ -163,6 +213,20 @@ function updateExplorationStatus() {
   status.textContent = `${region.name} · ${region.description}`;
 }
 
+function showDiscoveryToast(monster) {
+  if (!discoveryToast) createDiscoveryToast();
+  discoveryIcon.textContent = monster.icon || "◈";
+  discoveryTitle.textContent = `發現：${monster.name}`;
+  discoveryText.textContent = DEV_MODE ? "測試模式：本次發現不會永久儲存" : "已加入收藏圖鑑";
+  discoveryToast.hidden = false;
+  requestAnimationFrame(() => discoveryToast.classList.add("is-visible"));
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    discoveryToast.classList.remove("is-visible");
+    setTimeout(() => { discoveryToast.hidden = true; }, 220);
+  }, 1800);
+}
+
 function drawPolygon(polygon) {
   ctx.beginPath();
   polygon.forEach((p, index) => {
@@ -242,41 +306,32 @@ function drawTerrain() {
   ctx.fillRect(0, 0, world.width, world.height);
 
   const byId = Object.fromEntries(regions.map(region => [region.id, region]));
-
   fillPolygon(byId["qingqiu-country"].polygon, "#8aa66b");
   fillPolygon(byId["mingxing-mountain"].polygon, "#66815d");
   fillPolygon(byId["east-extreme"].polygon, "#879d6b");
   fillPolygon(byId["great-wilderness"].polygon, "#6f855f");
 
-  // 青丘之國：丘陵、草原、溪谷。
   drawHill(330, 500, 520, 230, "#78975f");
   drawHill(700, 620, 600, 270, "#73905b");
   drawHill(1040, 500, 460, 210, "#76945e");
 
-  // 明星之山：山地是主體，讓「看到山」就真的在明星之山。
   drawMountain(1120, 520, 520, 420, "#405e4c");
   drawMountain(1380, 430, 600, 500, "#355345");
   drawMountain(1660, 540, 460, 350, "#2f4c40");
 
-  // 東極：開闊、少遮蔽物，帶有天地交界感。
   ctx.fillStyle = "rgba(225, 211, 151, .12)";
   ctx.fillRect(1240, 500, 560, 420);
 
-  // 大荒之野：低矮荒丘與稀疏植被。
   drawHill(300, 1120, 700, 230, "#627856");
   drawHill(950, 1140, 760, 250, "#5d7251");
-
   drawRiver();
 
   for (const [x, y, scale] of [
     [180, 350, 1.0], [430, 570, 0.8], [820, 430, 1.1],
     [610, 720, 0.75], [970, 680, 0.9], [1510, 760, 0.85],
     [1740, 1020, 0.9], [1180, 1060, 0.7], [300, 1020, 0.7]
-  ]) {
-    drawTree(x, y, scale);
-  }
+  ]) drawTree(x, y, scale);
 
-  // 區域邊界只用很淡的線，不把世界切成四個方塊。
   for (const region of regions) {
     strokePolygon(region.polygon, "rgba(238,224,172,.16)", 3);
   }
@@ -313,12 +368,7 @@ function drawMonsterMarkers(now) {
     ctx.fill();
 
     ctx.fillStyle = "rgba(8,25,19,.78)";
-    ctx.fillRect(
-      monster.position.x - (found ? 78 : 58),
-      monster.position.y + 44,
-      found ? 156 : 116,
-      found ? 38 : 34
-    );
+    ctx.fillRect(monster.position.x - (found ? 78 : 58), monster.position.y + 44, found ? 156 : 116, found ? 38 : 34);
 
     ctx.fillStyle = "#fff4cf";
     ctx.font = found ? "600 17px system-ui" : "600 15px system-ui";
@@ -331,18 +381,16 @@ function draw(now = 0) {
   const w = canvas.clientWidth;
   const h = canvas.clientHeight;
   ctx.clearRect(0, 0, w, h);
-
   ctx.fillStyle = "#d1c28b";
   ctx.fillRect(0, 0, w, h);
 
   ctx.save();
   ctx.translate(camera.x, camera.y);
   ctx.scale(camera.zoom, camera.zoom);
-
   drawTerrain();
   drawMonsterMarkers(now);
-
   ctx.restore();
+
   updateExplorationStatus();
   requestAnimationFrame(draw);
 }
@@ -353,23 +401,14 @@ function resizeCanvas() {
   canvas.width = Math.max(1, Math.round(rect.width * ratio));
   canvas.height = Math.max(1, Math.round(rect.height * ratio));
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-  clampCamera();
-  updateZoomReadout();
-  updateExplorationStatus();
+  fitWorldToViewport();
 }
 
 new ResizeObserver(resizeCanvas).observe(canvas);
 window.addEventListener("resize", resizeCanvas);
 
 function startDrag(event, p) {
-  drag = {
-    pointerId: event.pointerId,
-    startX: p.x,
-    startY: p.y,
-    cameraX: camera.x,
-    cameraY: camera.y,
-    moved: false
-  };
+  drag = { pointerId: event.pointerId, startX: p.x, startY: p.y, cameraX: camera.x, cameraY: camera.y, moved: false };
 }
 
 function startPinch() {
@@ -377,7 +416,6 @@ function startPinch() {
   const [a, b] = [...pointers.values()];
   const centerX = (a.x + b.x) / 2;
   const centerY = (a.y + b.y) / 2;
-
   pinch = {
     distance: Math.max(Math.hypot(a.x - b.x, a.y - b.y), 1),
     zoom: camera.zoom,
@@ -392,10 +430,8 @@ canvas.addEventListener("pointerdown", event => {
   canvas.setPointerCapture(event.pointerId);
   const p = point(event);
   pointers.set(event.pointerId, p);
-
   if (pointers.size === 1) startDrag(event, p);
   else if (pointers.size === 2) startPinch();
-
   canvas.classList.add("is-dragging");
 });
 
@@ -422,11 +458,7 @@ canvas.addEventListener("pointermove", event => {
     const centerX = (a.x + b.x) / 2;
     const centerY = (a.y + b.y) / 2;
     const distance = Math.max(Math.hypot(a.x - b.x, a.y - b.y), 1);
-
-    camera.zoom = Math.max(
-      limits.min,
-      Math.min(limits.max, pinch.zoom * (distance / pinch.distance))
-    );
+    camera.zoom = Math.max(limits.min, Math.min(limits.max, pinch.zoom * (distance / pinch.distance)));
     camera.x = centerX - pinch.worldCenter.x * camera.zoom;
     camera.y = centerY - pinch.worldCenter.y * camera.zoom;
     clampCamera();
@@ -437,26 +469,16 @@ canvas.addEventListener("pointermove", event => {
 
 function releasePointer(event) {
   pointers.delete(event.pointerId);
-
   if (pointers.size === 1) {
     const [remainingId] = [...pointers.keys()];
     const p = pointers.get(remainingId);
-    drag = {
-      pointerId: remainingId,
-      startX: p.x,
-      startY: p.y,
-      cameraX: camera.x,
-      cameraY: camera.y,
-      moved: false
-    };
+    drag = { pointerId: remainingId, startX: p.x, startY: p.y, cameraX: camera.x, cameraY: camera.y, moved: false };
     pinch = null;
   } else if (pointers.size === 0) {
     drag = null;
     pinch = null;
     canvas.classList.remove("is-dragging");
-    setTimeout(() => {
-      suppressClick = false;
-    }, 80);
+    setTimeout(() => { suppressClick = false; }, 80);
   }
 }
 
@@ -472,18 +494,10 @@ canvas.addEventListener("wheel", event => {
 zoomControls?.addEventListener("click", event => {
   const button = event.target.closest("button");
   if (!button) return;
-
   const action = button.dataset.zoom;
   if (action === "in") setZoom(camera.zoom * 1.18);
   if (action === "out") setZoom(camera.zoom / 1.18);
-  if (action === "reset") {
-    camera.zoom = 1;
-    camera.x = -420;
-    camera.y = -300;
-    clampCamera();
-    updateZoomReadout();
-    updateExplorationStatus();
-  }
+  if (action === "reset") resetCameraToWorld();
 });
 
 function monsterAtScreenPoint(x, y) {
@@ -497,15 +511,16 @@ function monsterAtScreenPoint(x, y) {
 
 canvas.addEventListener("click", event => {
   if (suppressClick) return;
-
   const p = point(event);
   const monster = monsterAtScreenPoint(p.x, p.y);
   if (!monster) return;
 
+  // 只有玩家實際點擊妖獸才會加入收藏；靠近、縮放、拖曳都不會自動捕獲。
   if (!discoveredMonsters.has(monster.id)) {
     discoveredMonsters.add(monster.id);
     saveDiscovered();
     lastClueMonsterId = null;
+    showDiscoveryToast(monster);
     showStatus(`${monster.name} · 已加入收藏圖鑑！`, 2200);
     renderCollection();
   } else {
@@ -517,7 +532,6 @@ function renderCollection() {
   const total = monsters.length;
   const found = monsters.filter(monster => discoveredMonsters.has(monster.id)).length;
   collectionProgress.textContent = `${found} / ${total} 已發現`;
-
   collectionGrid.innerHTML = monsters.map(monster => {
     const discovered = discoveredMonsters.has(monster.id);
     return `
@@ -548,11 +562,9 @@ document.addEventListener("keydown", event => {
 });
 
 renderCollection();
+createDiscoveryToast();
 resizeCanvas();
 updateZoomReadout();
 
-if (DEV_MODE) {
-  document.title = "山海經：青丘尋獸 · DEV";
-}
-
+if (DEV_MODE) document.title = "山海經：青丘尋獸 · DEV";
 requestAnimationFrame(draw);
