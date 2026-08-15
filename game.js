@@ -367,7 +367,7 @@ canvas.addEventListener("click", event => {
   }
 });
 
-status.textContent = monsters[0].region + " · " + monsters[0].hint;
+status.textContent = monsters[0].regionName + " · " + monsters[0].hint;
 
 resizeCanvas();
 setZoom(1);
