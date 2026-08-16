@@ -1,47 +1,47 @@
 // 《山海經：青丘尋獸》妖獸與世界資料
-// region polygon 是正式世界地圖的邏輯配置；之後替換精美地圖 Asset 時沿用同一套座標。
+// 正式世界地圖邏輯座標：1800 × 1200。
+// region polygon 是世界地圖的邏輯區域；未來替換精美地圖 Asset 時沿用同一套座標。
 // active=true 的妖獸目前可在地圖上探索。
 
 export const regions = [
   {
     id: "qingqiu-country",
     name: "青丘之國",
-    description: "丘陵與溪谷相連，古老的狐族傳說仍留在這片土地。",
+    description: "丘陵、林地與溪谷相連，古老的狐族傳說仍留在這片土地。",
     polygon: [
-      { x: 0, y: 0 }, { x: 920, y: 0 }, { x: 1120, y: 360 },
-      { x: 1030, y: 610 }, { x: 760, y: 820 }, { x: 960, y: 1010 },
-      { x: 0, y: 1010 }
+      { x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1100, y: 300 },
+      { x: 1050, y: 650 }, { x: 900, y: 900 }, { x: 0, y: 900 }
     ],
     terrain: "hills"
   },
   {
     id: "mingxing-mountain",
     name: "明星之山",
-    description: "山嶺高聳，岩壁間殘留著不尋常的灼熱氣息。",
+    description: "群峰聳立，岩壁與山谷間殘留著不尋常的灼熱氣息。",
     polygon: [
-      { x: 920, y: 0 }, { x: 1800, y: 0 }, { x: 1800, y: 540 },
-      { x: 1510, y: 590 }, { x: 1300, y: 620 }, { x: 1120, y: 360 }
+      { x: 1000, y: 0 }, { x: 1800, y: 0 }, { x: 1800, y: 580 },
+      { x: 1500, y: 620 }, { x: 1250, y: 700 }, { x: 1100, y: 300 }
     ],
     terrain: "mountains"
   },
   {
     id: "east-extreme",
     name: "東極",
-    description: "天地交界之處，視野開闊，遠方似有異獸留下痕跡。",
+    description: "天地交界之處，地勢逐漸開闊，遠方的天際像沒有盡頭。",
     polygon: [
-      { x: 1300, y: 620 }, { x: 1510, y: 590 },
-      { x: 1800, y: 540 }, { x: 1800, y: 960 }, { x: 1540, y: 1030 },
-      { x: 960, y: 1010 }, { x: 1180, y: 820 }
+      { x: 1100, y: 300 }, { x: 1250, y: 700 }, { x: 1500, y: 620 },
+      { x: 1800, y: 580 }, { x: 1800, y: 950 }, { x: 1050, y: 1000 },
+      { x: 900, y: 900 }, { x: 1050, y: 650 }
     ],
     terrain: "open"
   },
   {
     id: "great-wilderness",
     name: "大荒之野",
-    description: "荒野無邊，古老的氣息自天際緩緩逼近。",
+    description: "荒野向天際延伸，古老巨石與遺跡散落在寂寥的大地。",
     polygon: [
-      { x: 0, y: 1010 }, { x: 960, y: 1010 }, { x: 1540, y: 1030 },
-      { x: 1800, y: 960 }, { x: 1800, y: 1200 }, { x: 0, y: 1200 }
+      { x: 0, y: 900 }, { x: 900, y: 900 }, { x: 1050, y: 1000 },
+      { x: 1800, y: 950 }, { x: 1800, y: 1200 }, { x: 0, y: 1200 }
     ],
     terrain: "wilderness"
   }
@@ -53,7 +53,7 @@ export const monsters = [
     name: "九尾狐",
     icon: "🦊",
     regionId: "qingqiu-country",
-    position: { x: 1160, y: 650 },
+    position: { x: 760, y: 520 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.35,
@@ -69,7 +69,7 @@ export const monsters = [
     name: "畢方",
     icon: "🐦",
     regionId: "mingxing-mountain",
-    position: { x: 1420, y: 300 },
+    position: { x: 1450, y: 320 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.55,
@@ -85,7 +85,7 @@ export const monsters = [
     name: "夫諸",
     icon: "🦌",
     regionId: "qingqiu-country",
-    position: { x: 520, y: 820 },
+    position: { x: 500, y: 760 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.75,
