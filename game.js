@@ -376,6 +376,7 @@ function drawMonsterMarkers(now) {
     const found = discoveredMonsters.has(monster.id);
     const distance = distanceToMonster(monster);
 
+    // 尚未發現：只有接近到線索範圍、且達到提示倍率時，才顯示未知蹤跡。
     if (!found && distance <= monster.clueRadius && camera.zoom >= monster.clueZoom) {
       const pulse = 15 + Math.sin(now / 450 + monster.position.x) * 3;
       ctx.strokeStyle = "rgba(255,236,151,.42)";
@@ -385,43 +386,76 @@ function drawMonsterMarkers(now) {
       ctx.stroke();
     }
 
+    if (found) {
+      // 已發現妖獸：永久留下在「實際發現座標」的小型地圖標記。
+      // 不再顯示大型「妖獸名稱／已發現」區塊，避免與發現 Toast 重複。
+      const iconSize = 24 / camera.zoom;
+      const markerRadius = 18 / camera.zoom;
+
+      ctx.save();
+      ctx.translate(monster.position.x, monster.position.y);
+
+      ctx.fillStyle = "rgba(8,25,19,.88)";
+      ctx.strokeStyle = "rgba(225,191,110,.82)";
+      ctx.lineWidth = 1.5 / camera.zoom;
+      ctx.beginPath();
+      ctx.arc(0, 0, markerRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = `${iconSize}px "Apple Color Emoji","Segoe UI Emoji",system-ui`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(monster.icon || "◈", 0, 1 / camera.zoom);
+
+      // 放大探索時才顯示小型名稱，避免縮小地圖過度擁擠。
+      if (camera.zoom >= 1.15) {
+        const labelY = 29 / camera.zoom;
+        const labelWidth = Math.max(54, monster.name.length * 15) / camera.zoom;
+        const labelHeight = 20 / camera.zoom;
+
+        ctx.fillStyle = "rgba(8,25,19,.84)";
+        ctx.beginPath();
+        ctx.roundRect(-labelWidth / 2, labelY - labelHeight / 2, labelWidth, labelHeight, 7 / camera.zoom);
+        ctx.fill();
+
+        ctx.fillStyle = "#fff4cf";
+        ctx.font = `600 ${11 / camera.zoom}px system-ui`;
+        ctx.textBaseline = "middle";
+        ctx.fillText(monster.name, 0, labelY);
+      }
+
+      ctx.restore();
+      continue;
+    }
+
+    // 尚未發現：只有在足夠接近且達到 discoveryZoom 時，才顯示原本的未知標記。
     if (camera.zoom < monster.discoveryZoom) continue;
 
     const pulse = 27 + Math.sin(now / 500 + monster.position.y) * 4;
-    ctx.strokeStyle = found ? "rgba(255,236,151,.95)" : "rgba(255,236,151,.72)";
+    ctx.strokeStyle = "rgba(255,236,151,.72)";
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(monster.position.x, monster.position.y, pulse, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.fillStyle = found ? "#ffe695" : "#fff0ae";
+    ctx.fillStyle = "#fff0ae";
     ctx.beginPath();
     ctx.arc(monster.position.x, monster.position.y, 7, 0, Math.PI * 2);
     ctx.fill();
 
-    const labelWidth = found ? 176 : 116;
-    const labelHeight = found ? 58 : 34;
     ctx.fillStyle = "rgba(8,25,19,.78)";
     ctx.fillRect(
-      monster.position.x - labelWidth / 2,
+      monster.position.x - 58,
       monster.position.y + 44,
-      labelWidth,
-      labelHeight
+      116,
+      34
     );
 
     ctx.fillStyle = "#fff4cf";
     ctx.textAlign = "center";
-
-    if (found) {
-      ctx.font = "600 18px system-ui";
-      ctx.fillText(`${monster.icon || "◈"}  ${monster.name}`, monster.position.x, monster.position.y + 68);
-      ctx.font = "500 12px system-ui";
-      ctx.fillStyle = "#c5d0c1";
-      ctx.fillText("已發現", monster.position.x, monster.position.y + 88);
-    } else {
-      ctx.font = "600 15px system-ui";
-      ctx.fillText("異獸蹤跡", monster.position.x, monster.position.y + 66);
-    }
+    ctx.font = "600 15px system-ui";
+    ctx.fillText("異獸蹤跡", monster.position.x, monster.position.y + 66);
   }
 }
 
