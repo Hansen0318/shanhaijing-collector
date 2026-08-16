@@ -334,38 +334,79 @@ function drawRiver() {
 }
 
 function drawTerrain() {
-  ctx.fillStyle = "#7d9e61";
-  ctx.fillRect(0, 0, world.width, world.height);
-
   const byId = Object.fromEntries(regions.map(region => [region.id, region]));
+
+  // 四區先由 polygon 決定底色，確保「地名」與「實際地形區域」使用同一套座標。
   fillPolygon(byId["qingqiu-country"].polygon, "#8aa66b");
-  fillPolygon(byId["mingxing-mountain"].polygon, "#66815d");
-  fillPolygon(byId["east-extreme"].polygon, "#879d6b");
-  fillPolygon(byId["great-wilderness"].polygon, "#6f855f");
+  fillPolygon(byId["mingxing-mountain"].polygon, "#58725a");
+  fillPolygon(byId["east-extreme"].polygon, "#8b9b6c");
+  fillPolygon(byId["great-wilderness"].polygon, "#667255");
 
-  drawHill(330, 500, 520, 230, "#78975f");
-  drawHill(700, 620, 600, 270, "#73905b");
-  drawHill(1040, 500, 460, 210, "#76945e");
+  // 青丘之國：丘陵、林地與溪谷。
+  ctx.save();
+  ctx.clip(); // 以目前路徑為基礎的 clip 不可靠，因此以下使用區域 polygon 的獨立 clip。
+  ctx.restore();
 
-  drawMountain(1120, 520, 520, 420, "#405e4c");
-  drawMountain(1380, 430, 600, 500, "#355345");
-  drawMountain(1660, 540, 460, 350, "#2f4c40");
-
-  ctx.fillStyle = "rgba(225, 211, 151, .12)";
-  ctx.fillRect(1240, 500, 560, 420);
-
-  drawHill(300, 1120, 700, 230, "#627856");
-  drawHill(950, 1140, 760, 250, "#5d7251");
-  drawRiver();
-
+  ctx.save();
+  drawPolygon(byId["qingqiu-country"].polygon);
+  ctx.clip();
+  drawHill(260, 430, 430, 180, "#78975f");
+  drawHill(570, 560, 560, 240, "#73905b");
+  drawHill(780, 700, 420, 170, "#76945e");
   for (const [x, y, scale] of [
-    [180, 350, 1.0], [430, 570, 0.8], [820, 430, 1.1],
-    [610, 720, 0.75], [970, 680, 0.9], [1510, 760, 0.85],
-    [1740, 1020, 0.9], [1180, 1060, 0.7], [300, 1020, 0.7]
+    [160, 280, .85], [360, 390, .75], [650, 320, 1.0],
+    [850, 470, .8], [300, 650, .7], [700, 760, .8]
   ]) drawTree(x, y, scale);
+  drawRiver();
+  ctx.restore();
 
+  // 明星之山：高山、岩壁、山谷。
+  ctx.save();
+  drawPolygon(byId["mingxing-mountain"].polygon);
+  ctx.clip();
+  drawMountain(1160, 520, 520, 470, "#405e4c");
+  drawMountain(1420, 470, 650, 560, "#355345");
+  drawMountain(1690, 500, 500, 430, "#2f4c40");
+  drawMountain(1280, 690, 430, 250, "#46614d");
+  ctx.restore();
+
+  // 東極：開闊地與天際線，保留少量水系。
+  ctx.save();
+  drawPolygon(byId["east-extreme"].polygon);
+  ctx.clip();
+  ctx.fillStyle = "rgba(225, 211, 151, .12)";
+  ctx.fillRect(1050, 580, 750, 420);
+  ctx.strokeStyle = "rgba(220, 229, 184, .34)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(1160, 790);
+  ctx.bezierCurveTo(1350, 700, 1510, 850, 1810, 740);
+  ctx.stroke();
+  ctx.restore();
+
+  // 大荒之野：荒原、巨石與古老遺跡感。
+  ctx.save();
+  drawPolygon(byId["great-wilderness"].polygon);
+  ctx.clip();
+  drawHill(330, 1110, 680, 190, "#5c6e50");
+  drawHill(1040, 1130, 720, 210, "#56684c");
+  for (const [x, y, s] of [
+    [180, 1010, 1.0], [470, 1080, .75], [820, 1030, 1.1],
+    [1210, 1100, .8], [1510, 1020, 1.0], [1700, 1130, .75]
+  ]) {
+    ctx.fillStyle = "#4d5a47";
+    ctx.beginPath();
+    ctx.ellipse(x, y, 28 * s, 18 * s, -.18, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.strokeStyle = "rgba(225,211,151,.16)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(620, 1040, 180, 90);
+  ctx.restore();
+
+  // 區域邊界只做淡淡的視覺提示，不搶地圖主體。
   for (const region of regions) {
-    strokePolygon(region.polygon, "rgba(238,224,172,.16)", 3);
+    strokePolygon(region.polygon, "rgba(238,224,172,.18)", 3);
   }
 }
 
