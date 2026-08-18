@@ -244,6 +244,62 @@ function installUI() {
     }
   });
 
+  function enhanceCollectionCards() {
+    const grid = document.querySelector("#collection-grid");
+    if (!grid) return;
+
+    grid.querySelectorAll(".collection-item.discovered").forEach(card => {
+      if (card.querySelector(".monster-ability-button")) return;
+
+      const name = card.querySelector(".monster-name")?.textContent?.trim() || "";
+      const nameToId = {
+        "九尾狐": "nine-tailed-fox",
+        "夫諸": "fu-zhu",
+        "畢方": "bi-fang"
+      };
+      const monsterId = nameToId[name];
+      if (!monsterId) return;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "monster-ability-button";
+      button.textContent = "查看能力";
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        renderMonsterDetail(monsterId);
+      });
+
+      card.appendChild(button);
+    });
+  }
+
+  const collectionGrid = document.querySelector("#collection-grid");
+  if (collectionGrid) {
+    new MutationObserver(enhanceCollectionCards).observe(collectionGrid, {
+      childList: true,
+      subtree: true
+    });
+    enhanceCollectionCards();
+  }
+
+  // Capture phase：即使 game.js 的 click handler 先處理，也能在圖鑑卡片點擊時開啟能力。
+  document.addEventListener("click", event => {
+    const card = event.target.closest?.(".collection-item.discovered");
+    if (!card || event.target.closest(".monster-ability-button")) return;
+
+    const name = card.querySelector(".monster-name")?.textContent?.trim() || "";
+    const nameToId = {
+      "九尾狐": "nine-tailed-fox",
+      "夫諸": "fu-zhu",
+      "畢方": "bi-fang"
+    };
+
+    if (nameToId[name]) {
+      renderMonsterDetail(nameToId[name]);
+    }
+  }, true);
+
   render();
 }
 
