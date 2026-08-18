@@ -221,8 +221,10 @@ function installUI() {
       card?.dataset?.id;
 
     if (!monsterId) {
-      const node = event.target.closest("button,article,div");
-      const text = node?.textContent || "";
+      // game.js 目前的圖鑑卡片是 <article class="collection-item">。
+      // 點擊圖示時 target 是內層 .monster-icon，所以要往上找到整張卡片。
+      const cardElement = event.target.closest(".collection-item");
+      const text = cardElement?.textContent || "";
       const nameToId = {
         "九尾狐": "nine-tailed-fox",
         "夫諸": "fu-zhu",
