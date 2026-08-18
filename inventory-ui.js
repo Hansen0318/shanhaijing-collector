@@ -206,6 +206,42 @@ function installUI() {
     if (event.detail?.monsterId) renderMonsterDetail(event.detail.monsterId);
   });
 
+  // 從「妖獸圖鑑」直接查看能力。
+  document.addEventListener("click", event => {
+    const grid = event.target.closest("#collection-grid");
+    if (!grid) return;
+
+    const card = event.target.closest(
+      "[data-monster-id],[data-monster],[data-id]"
+    );
+
+    let monsterId =
+      card?.dataset?.monsterId ||
+      card?.dataset?.monster ||
+      card?.dataset?.id;
+
+    if (!monsterId) {
+      const node = event.target.closest("button,article,div");
+      const text = node?.textContent || "";
+      const nameToId = {
+        "九尾狐": "nine-tailed-fox",
+        "夫諸": "fu-zhu",
+        "畢方": "bi-fang"
+      };
+
+      for (const [name, id] of Object.entries(nameToId)) {
+        if (text.includes(name)) {
+          monsterId = id;
+          break;
+        }
+      }
+    }
+
+    if (["nine-tailed-fox", "fu-zhu", "bi-fang"].includes(monsterId)) {
+      renderMonsterDetail(monsterId);
+    }
+  });
+
   render();
 }
 
