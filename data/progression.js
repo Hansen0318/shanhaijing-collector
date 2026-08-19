@@ -1,5 +1,6 @@
 // 妖獸養成資料與規則。
-// 餵食 = 永久成長；賦能 = 可安裝效果；talents = 妖獸天生技能。
+// 餵食 = 永久成長；賦能 = 安裝效果；talents = 妖獸天生技能。
+// 基礎能力與累積增幅分開保存，UI 可顯示「5 +2」而不是只顯示 7。
 
 export const baseMonsterStats = {
   "nine-tailed-fox": {
@@ -37,9 +38,13 @@ export const talentDefinitions = {
 export function createProgressionState(monsterId) {
   const base = baseMonsterStats[monsterId];
   if (!base) return null;
+
   return {
     level: base.level,
     stats: { ...base.stats },
+    statBonuses: Object.fromEntries(
+      Object.keys(base.stats).map(key => [key, 0])
+    ),
     talents: [...base.talents],
     feedCount: 0,
     equipped: []
@@ -47,22 +52,61 @@ export function createProgressionState(monsterId) {
 }
 
 export function applyFeed(state, item, monsterId) {
-  const effect = item?.effects?.feed?.[monsterId] ?? item?.effects?.feed?.default;
-  if (!effect) return null;
+  const effect = item?.effects?.feed?.[monsterId];
+  if (!state || !effect) return null;
+
   const next = structuredClone(state);
+
+  next.statBonuses ||= Object.fromEntries(
+    Object.keys(baseMonsterStats[monsterId]?.stats || {}).map(key => [key, 0])
+  );
+
   for (const [key, value] of Object.entries(effect)) {
-    if (key in next.stats) next.stats[key] += value;
+    if (!(key in next.stats) || !Number.isFinite(value)) continue;
+
+    next.stats[key] += value;
+    next.statBonuses[key] = (next.statBonuses[key] || 0) + value;
   }
+
   next.feedCount += 1;
   next.level = 1 + Math.floor(next.feedCount / 3);
+
   return next;
 }
 
 export function equipEmpowerment(state, item, monsterId) {
   const effect = item?.effects?.empower?.[monsterId];
-  if (!effect) return null;
-  if (state.equipped.some(entry => entry.itemId === item.id)) return null;
+  if (!state || !effect) return null;
+
+  if ((state.equipped || []).some(entry => entry.itemId === item.id)) {
+    return null;
+  }
+
   const next = structuredClone(state);
+  next.equipped ||= [];
   next.equipped.push({ itemId: item.id, ...effect });
+
   return next;
+}
+
+export function getStatDisplay(monsterId, state, previewEffect = null) {
+  const base = baseMonsterStats[monsterId]?.stats || {};
+  const bonuses = state?.statBonuses || {};
+  const preview = previewEffect || {};
+
+  return Object.fromEntries(
+    Object.keys(base).map(key => {
+      const bonus = (bonuses[key] || 0) + (preview[key] || 0);
+
+      return [
+        key,
+        {
+          key,
+          base: base[key],
+          bonus,
+          text: `${base[key]}${bonus ? ` +${bonus}` : ""}`
+        }
+      ];
+    })
+  );
 }
