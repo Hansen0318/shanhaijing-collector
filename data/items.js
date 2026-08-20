@@ -1,6 +1,4 @@
 // 物品資料：探索 → 背包 → 餵食／賦能
-// 規則：沒有明確配置的妖獸不可使用該道具；禁止 default 泛用效果。
-
 export const items = [
   {
     id: "qingqiu-herb",
@@ -13,7 +11,8 @@ export const items = [
     effects: {
       feed: {
         "nine-tailed-fox": { spirit: 2 },
-        "fu-zhu": { adaptability: 1 }
+        "fu-zhu": { adaptability: 1 },
+        default: { spirit: 1 }
       }
     }
   },
@@ -29,7 +28,8 @@ export const items = [
       feed: {
         "nine-tailed-fox": { spirit: 1 },
         "fu-zhu": { spirit: 1 },
-        "bi-fang": { adaptability: 1 }
+        "bi-fang": { adaptability: 1 },
+        default: { spirit: 1 }
       }
     }
   },
@@ -43,7 +43,8 @@ export const items = [
     stackMax: 99,
     effects: {
       feed: {
-        "fu-zhu": { adaptability: 2 }
+        "fu-zhu": { adaptability: 2 },
+        default: { adaptability: 1 }
       }
     }
   },
@@ -58,7 +59,7 @@ export const items = [
     effects: {
       empower: {
         "nine-tailed-fox": {
-          id: "night-sense-moon",
+          id: "night-sense",
           name: "月華感知",
           description: "夜間探索時，特殊蹤跡發現率提升 10%。",
           modifiers: { nightDiscovery: 0.10 }
@@ -82,7 +83,8 @@ export const items = [
     stackMax: 20,
     effects: {
       feed: {
-        "bi-fang": { adaptability: 2 }
+        "bi-fang": { adaptability: 2 },
+        default: { adaptability: 1 }
       },
       empower: {
         "bi-fang": {
@@ -97,16 +99,3 @@ export const items = [
 ];
 
 export const itemById = Object.fromEntries(items.map(item => [item.id, item]));
-
-export function getItemEffect(item, monsterId, type) {
-  return item?.effects?.[type]?.[monsterId] ?? null;
-}
-
-export function canUseItemOnMonster(item, monsterId, type = null) {
-  if (!item || !monsterId) return false;
-  if (type) return Boolean(getItemEffect(item, monsterId, type));
-  return Boolean(
-    getItemEffect(item, monsterId, "feed") ||
-    getItemEffect(item, monsterId, "empower")
-  );
-}
