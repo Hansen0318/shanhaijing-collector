@@ -129,7 +129,7 @@ function statHTML(monsterId, state, preview = null) {
 
   return Object.keys(base).map(key => {
     const totalBonus = (bonus[key] || 0) + (extra[key] || 0);
-    return `<span>${statNames[key]} ${base[key]}${totalBonus ? ` <b class="stat-bonus">+${totalBonus}</b>` : ''}</span>`;
+    return `<span class="stat-cell"><span class="stat-label">${statNames[key]}</span><span class="stat-value">${base[key]}${totalBonus ? `<b class="stat-bonus">+${totalBonus}</b>` : ''}</span></span>`;
   }).join('');
 }
 
@@ -323,14 +323,17 @@ function injectStyles() {
     .use-targets{display:grid;gap:10px}.use-target-card{background:#fffaf0;border-radius:14px;padding:12px;border:1px solid rgba(65,53,29,.15)}
     .use-target-head{display:flex;align-items:center;gap:8px}.use-target-icon{font-size:1.7rem}
     .use-target-stats,.confirm-stats,.growth-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:9px 0}
-    .use-target-stats span,.confirm-stats span,.growth-stats span{background:#f0e8cf;border-radius:8px;padding:7px;color:#3b321f;font-weight:700}
-    .stat-bonus{color:#b34b20;font-weight:900}.use-target-effect{font-size:.78rem;color:#6d5a31;margin:6px 0}
+    .stat-cell{background:#f0e8cf;border-radius:8px;padding:7px;color:#3b321f;font-weight:700;display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:8px;min-width:0}
+    .stat-label{min-width:0}.stat-value{white-space:nowrap}.stat-bonus{color:#b34b20;font-weight:900;margin-left:2px}.use-target-effect{font-size:.78rem;color:#6d5a31;margin:6px 0}
     .use-target-actions,.confirm-actions{display:flex;gap:8px}.use-target-actions button,.confirm-actions button{border:0;border-radius:10px;padding:9px 13px;background:#183b31;color:#fff4cf;font-weight:800;cursor:pointer}
     .confirm-actions{justify-content:flex-end;margin-top:14px}.confirm-actions button[data-confirm-cancel]{background:#77705f}
     .growth-title{font-size:1.2rem;font-weight:900;color:#5c451d}.growth-level{margin-top:4px;color:#66583d}.growth-section-title{margin:16px 0 7px;font-weight:900;color:#5c451d}
     .monster-skill-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}.monster-skill-list li{background:#fffaf0;border-radius:10px;padding:10px}.monster-skill-list strong,.monster-skill-list small{display:block}.monster-skill-list small{margin-top:3px;color:#66583d}
     .monster-ability-panel{margin-top:8px;padding-top:8px;border-top:1px solid rgba(225,191,110,.24)}
     .monster-level,.monster-card-skill-title{color:#fff4cf;font:700 .72rem/1.2 system-ui}.monster-card-skills{display:flex;flex-wrap:wrap;gap:4px 7px;margin:4px 0 7px}.monster-card-skills span,.monster-stats span{color:#dce7df;font:700 .66rem/1.2 system-ui}
+    .monster-stats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .monster-stats .stat-cell{background:transparent;padding:0;display:grid;grid-template-columns:1fr auto;color:#dce7df;font:700 .66rem/1.2 system-ui}
+    .monster-stats .stat-label,.monster-stats .stat-value{font:inherit;color:inherit}
     .dev-section{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(65,53,29,.25)}.dev-title{font-size:.75rem;font-weight:900;color:#6d5a31;margin-bottom:7px}
     .dev-items{display:grid;grid-template-columns:1fr;gap:6px}.dev-item-row{display:grid;grid-template-columns:42px 1fr 42px;gap:5px;align-items:center}.dev-item-row span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:8px;background:#fffaf0;color:#3b321f;font-size:.78rem;font-weight:800}.dev-items button{border:0;border-radius:8px;padding:7px;background:#ded5bc;color:#3b321f;cursor:pointer}.dev-items button:disabled{opacity:.45;cursor:not-allowed}
   `;
