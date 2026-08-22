@@ -1,59 +1,13 @@
-// 《山海經：青丘尋獸》妖獸與世界資料
-// 正式世界地圖邏輯座標：1800 × 1200。
-// region polygon 是世界地圖的邏輯區域；未來替換精美地圖 Asset 時沿用同一套座標。
-// active=true 的妖獸目前可在地圖上探索。
+// 《山海經：青丘尋獸》妖獸資料。
+// 妖獸本體資料與「出現在哪張地圖」分離；地圖配置位於 data/maps.js。
 
-export const regions = [
-  {
-    id: "qingqiu-country",
-    name: "青丘之國",
-    description: "丘陵、林地與溪谷相連，古老的狐族傳說仍留在這片土地。",
-    polygon: [
-      { x: 0, y: 0 }, { x: 1000, y: 0 }, { x: 1100, y: 300 },
-      { x: 1050, y: 650 }, { x: 900, y: 900 }, { x: 0, y: 900 }
-    ],
-    terrain: "hills"
-  },
-  {
-    id: "mingxing-mountain",
-    name: "明星之山",
-    description: "群峰聳立，岩壁與山谷間殘留著不尋常的灼熱氣息。",
-    polygon: [
-      { x: 1000, y: 0 }, { x: 1800, y: 0 }, { x: 1800, y: 580 },
-      { x: 1500, y: 620 }, { x: 1250, y: 700 }, { x: 1100, y: 300 }
-    ],
-    terrain: "mountains"
-  },
-  {
-    id: "east-extreme",
-    name: "東極",
-    description: "天地交界之處，地勢逐漸開闊，遠方的天際像沒有盡頭。",
-    polygon: [
-      { x: 1100, y: 300 }, { x: 1250, y: 700 }, { x: 1500, y: 620 },
-      { x: 1800, y: 580 }, { x: 1800, y: 950 }, { x: 1050, y: 1000 },
-      { x: 900, y: 900 }, { x: 1050, y: 650 }
-    ],
-    terrain: "open"
-  },
-  {
-    id: "great-wilderness",
-    name: "大荒之野",
-    description: "荒野向天際延伸，古老巨石與遺跡散落在寂寥的大地。",
-    polygon: [
-      { x: 0, y: 900 }, { x: 900, y: 900 }, { x: 1050, y: 1000 },
-      { x: 1800, y: 950 }, { x: 1800, y: 1200 }, { x: 0, y: 1200 }
-    ],
-    terrain: "wilderness"
-  }
-];
+import { currentMapId, getMonsterPlacements, getMapById } from "./maps.js";
 
 export const monsters = [
   {
     id: "nine-tailed-fox",
     name: "九尾狐",
     icon: "🦊",
-    regionId: "qingqiu-country",
-    position: { x: 760, y: 520 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.35,
@@ -68,8 +22,6 @@ export const monsters = [
     id: "bi-fang",
     name: "畢方",
     icon: "🐦",
-    regionId: "mingxing-mountain",
-    position: { x: 1450, y: 320 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.55,
@@ -84,8 +36,6 @@ export const monsters = [
     id: "fu-zhu",
     name: "夫諸",
     icon: "🦌",
-    regionId: "qingqiu-country",
-    position: { x: 500, y: 760 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.75,
@@ -100,8 +50,6 @@ export const monsters = [
     id: "ying-long",
     name: "應龍",
     icon: "🐉",
-    regionId: "east-extreme",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.8,
@@ -116,8 +64,6 @@ export const monsters = [
     id: "bai-ze",
     name: "白澤",
     icon: "🐐",
-    regionId: "great-wilderness",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.8,
@@ -132,8 +78,6 @@ export const monsters = [
     id: "qiong-qi",
     name: "窮奇",
     icon: "🐯",
-    regionId: "great-wilderness",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.9,
@@ -148,8 +92,6 @@ export const monsters = [
     id: "kui-niu",
     name: "夔牛",
     icon: "🐃",
-    regionId: "east-extreme",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.9,
@@ -164,8 +106,6 @@ export const monsters = [
     id: "feng-huang",
     name: "鳳凰",
     icon: "🦅",
-    regionId: "mingxing-mountain",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 2.0,
@@ -180,8 +120,6 @@ export const monsters = [
     id: "tao-wu",
     name: "檮杌",
     icon: "🐗",
-    regionId: "great-wilderness",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 2.0,
@@ -196,8 +134,6 @@ export const monsters = [
     id: "zheng",
     name: "狰",
     icon: "🦁",
-    regionId: "mingxing-mountain",
-    position: { x: 0, y: 0 },
     clueRadius: 210,
     discoveryRadius: 85,
     clueZoom: 1.8,
@@ -210,8 +146,22 @@ export const monsters = [
   }
 ];
 
-export const activeMonsters = monsters.filter(monster => monster.active);
+export const monstersById = Object.fromEntries(monsters.map(monster => [monster.id, monster]));
 
-export function getRegionById(regionId) {
-  return regions.find(region => region.id === regionId) ?? regions[0];
+export function getMonsterById(monsterId) {
+  return monstersById[monsterId] ?? null;
 }
+
+export function getActiveMonstersForMap(mapId = currentMapId) {
+  return getMonsterPlacements(mapId)
+    .map(placement => {
+      const monster = getMonsterById(placement.monsterId);
+      return monster ? { ...monster, ...placement } : null;
+    })
+    .filter(monster => monster && monster.active !== false);
+}
+
+// 相容目前 game.js：核心程式暫時仍可從 monsters.js 取得目前地圖的 regions。
+// 下一階段加入多地圖切換後，game.js 將直接消費 maps.js。
+export const regions = getMapById(currentMapId).regions;
+export const activeMonsters = getActiveMonstersForMap(currentMapId);
