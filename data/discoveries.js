@@ -1,6 +1,7 @@
-// 世界探索／尋寶資料層。
-// 目前先建立資料模型，不啟用實際取得流程；下一階段由 game.js 探索引擎消費此資料。
-// 新增道具時優先增加資料，不應在 game.js 寫死座標與 itemId。
+// 尋寶資料層：青丘固定尋寶點。
+// 規則：成功取得後進入 60 秒冷卻；冷卻結束即可再次取得。
+// 取得後由 discovery-engine.js 發出 shanhaijing:item-collected，
+// inventory-ui.js 已經有對應事件接收器。
 
 export const itemDiscoverySpots = [
   {
@@ -11,7 +12,7 @@ export const itemDiscoverySpots = [
     radius: 70,
     itemId: "qingqiu-herb",
     quantity: 1,
-    once: true,
+    cooldownMs: 60000,
     active: true
   },
   {
@@ -22,7 +23,7 @@ export const itemDiscoverySpots = [
     radius: 70,
     itemId: "ling-fruit",
     quantity: 1,
-    once: true,
+    cooldownMs: 60000,
     active: true
   },
   {
@@ -33,7 +34,7 @@ export const itemDiscoverySpots = [
     radius: 70,
     itemId: "dew-crystal",
     quantity: 1,
-    once: true,
+    cooldownMs: 60000,
     active: true
   },
   {
@@ -44,7 +45,7 @@ export const itemDiscoverySpots = [
     radius: 70,
     itemId: "moon-jade",
     quantity: 1,
-    once: true,
+    cooldownMs: 60000,
     active: true
   },
   {
@@ -55,11 +56,13 @@ export const itemDiscoverySpots = [
     radius: 70,
     itemId: "flame-crystal",
     quantity: 1,
-    once: true,
+    cooldownMs: 60000,
     active: true
   }
 ];
 
 export function getItemDiscoverySpots(mapId) {
-  return itemDiscoverySpots.filter(spot => spot.active !== false && spot.mapId === mapId);
+  return itemDiscoverySpots.filter(
+    spot => spot.active !== false && spot.mapId === mapId
+  );
 }
