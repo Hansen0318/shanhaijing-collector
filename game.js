@@ -451,12 +451,6 @@ function drawDiscoveryMarkers(now) {
       ctx.beginPath();
       ctx.arc(0,0,Math.max(14, r * .28),0,Math.PI*2);
       ctx.stroke();
-      ctx.fillStyle = "rgba(8,25,19,.78)";
-      ctx.fillRect(-48, r * .28, 96, 28);
-      ctx.fillStyle = "#d6ddd7";
-      ctx.textAlign = "center";
-      ctx.font = "700 13px system-ui";
-      ctx.fillText(`冷卻 ${formatCooldown(remaining)}`, 0, r * .28 + 19);
     } else {
       const pulse = 17 + Math.sin(now / 500 + spot.position.x) * 3;
       ctx.strokeStyle = "rgba(255,220,115,.7)";
@@ -478,11 +472,34 @@ function drawDiscoveryMarkers(now) {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText("✦", 0, 1);
+    }
 
+    ctx.restore();
+  }
+}
+
+// 尋寶／冷卻文字屬於畫面 UI，不跟著地圖 world transform 縮放。
+// 圖示本身仍然留在地圖世界座標中，只有文字與冷卻資訊使用固定螢幕尺寸。
+function drawDiscoveryLabels(now = Date.now()) {
+  for (const spot of getDiscoverySpots(currentMapId)) {
+    const screenX = camera.x + spot.position.x * camera.zoom;
+    const screenY = camera.y + spot.position.y * camera.zoom;
+    const remaining = getRemainingMs(spot.id, now);
+
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+
+    if (remaining > 0) {
+      ctx.fillStyle = "rgba(8,25,19,.78)";
+      ctx.fillRect(screenX - 48, screenY + 28, 96, 28);
+      ctx.fillStyle = "#d6ddd7";
+      ctx.font = "700 13px system-ui";
+      ctx.fillText(`冷卻 ${formatCooldown(remaining)}`, screenX, screenY + 47);
+    } else {
       ctx.fillStyle = "#fff4cf";
-      ctx.font = `700 ${12 / camera.zoom}px system-ui`;
-      ctx.textBaseline = "alphabetic";
-      ctx.fillText("尋寶", 0, 42 / camera.zoom);
+      ctx.font = "700 12px system-ui";
+      ctx.fillText("尋寶", screenX, screenY + 42);
     }
 
     ctx.restore();
@@ -695,6 +712,8 @@ function draw(now = 0) {
   drawDiscoveryMarkers(now);
   drawMonsterMarkers(now);
   ctx.restore();
+
+  drawDiscoveryLabels(Date.now());
 
   updateExplorationStatus();
   requestAnimationFrame(draw);
