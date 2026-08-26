@@ -7,7 +7,6 @@ const DISCOVERED_KEY = 'shanhaijing-collector-discovered';
 const selectedCounts = new Map();
 const ownedCounts = new Map();
 let installed = false;
-let syncing = false;
 
 const ITEM_NAMES = {
   'qingqiu-herb': '青丘靈草',
@@ -47,7 +46,6 @@ function discoveredIds() {
       if (Array.isArray(parsed)) parsed.forEach(id => ids.add(id));
     } catch {}
   }
-
   document.querySelectorAll('#collection-grid .collection-item.discovered .monster-name').forEach(node => {
     const name = node.textContent.trim();
     if (name === '九尾狐') ids.add('nine-tailed-fox');
@@ -64,158 +62,97 @@ function readOwnedFromInventoryStorage(itemId) {
     const inventory = JSON.parse(raw || '{}');
     const value = Number(inventory?.[itemId] || 0);
     return Number.isFinite(value) ? Math.max(0, value) : 0;
-  } catch {
-    return 0;
-  }
+  } catch { return 0; }
 }
-
-function getSelected(itemId) {
-  return Math.max(0, Number(selectedCounts.get(itemId) || 0));
-}
-
+function getSelected(itemId) { return Math.max(0, Number(selectedCounts.get(itemId) || 0)); }
 function getOwned(itemId) {
   const stored = readOwnedFromInventoryStorage(itemId);
   if (stored !== null) return stored;
   return Math.max(0, Number(ownedCounts.get(itemId) || 0));
 }
-
 function rememberOwnedFromRawText(itemId, text, node = null) {
   const match = String(text || '').match(/(\d+)\/(\d+)/);
   if (!match) return;
-
   const left = Number(match[1]);
   const right = Number(match[2]);
   const stackMax = Number(node?.dataset.guardStackMax || 0);
-
-  if (node && !node.dataset.guardStackMax && right >= left && right > 0) {
-    node.dataset.guardStackMax = String(right);
-  }
-
+  if (node && !node.dataset.guardStackMax && right >= left && right > 0) node.dataset.guardStackMax = String(right);
   const knownStackMax = Number(node?.dataset.guardStackMax || stackMax || 0);
-
-  // Only learn a new owned quantity from inventory-ui's native qty/stackMax form.
-  // Once normalized, the node is marked and will not feed its own 0/1 or 1/1 back into state.
-  if (knownStackMax > 0 && right === knownStackMax) {
-    ownedCounts.set(itemId, left);
-  }
+  if (knownStackMax > 0 && right === knownStackMax) ownedCounts.set(itemId, left);
 }
-
-function countText(itemId) {
-  return `${getSelected(itemId)}/${getOwned(itemId)}`;
-}
-
+function countText(itemId) { return `${getSelected(itemId)}/${getOwned(itemId)}`; }
 function updateCountNodes() {
-  if (syncing) return;
-  syncing = true;
-  try {
-    document.querySelectorAll('[data-dev-count]').forEach(node => {
-      const id = node.dataset.devCount;
-      rememberOwnedFromRawText(id, node.textContent, node);
-      const icon = node.textContent.match(/^[^\u4e00-\u9fff]*?/u)?.[0] || '';
-      const label = node.textContent
-        .replace(/^[^\u4e00-\u9fff]*?/u, '')
-        .replace(/\s+\d+\/\d+\s*$/, '')
-        .trim();
-      const itemName = label || node.dataset.itemName || id;
-      node.textContent = `${icon}${itemName} ${countText(id)}`;
-    });
-
-    document.querySelectorAll('#inventory-grid [data-item]').forEach(card => {
-      const id = card.dataset.item;
-      const small = card.querySelector('small');
-      if (!small) return;
-      rememberOwnedFromRawText(id, small.textContent, small);
-      small.textContent = countText(id);
-    });
-  } finally {
-    syncing = false;
-  }
+  document.querySelectorAll('[data-dev-count]').forEach(node => {
+    const id = node.dataset.devCount;
+    rememberOwnedFromRawText(id, node.textContent, node);
+    const icon = node.textContent.match(/^[^\u4e00-\u9fff]*?/u)?.[0] || '';
+    const label = node.textContent.replace(/^[^\u4e00-\u9fff]*?/u, '').replace(/\s+\d+\/\d+\s*$/, '').trim();
+    const itemName = label || node.dataset.itemName || id;
+    const next = `${icon}${itemName} ${countText(id)}`;
+    if (node.textContent !== next) node.textContent = next;
+  });
+  document.querySelectorAll('#inventory-grid [data-item]').forEach(card => {
+    const id = card.dataset.item;
+    const small = card.querySelector('small');
+    if (!small) return;
+    rememberOwnedFromRawText(id, small.textContent, small);
+    const next = countText(id);
+    if (small.textContent !== next) small.textContent = next;
+  });
 }
-
 function setSelected(itemId, value) {
   const owned = getOwned(itemId);
-  const selected = Math.max(0, Math.min(Number(value) || 0, owned));
-  selectedCounts.set(itemId, selected);
+  selectedCounts.set(itemId, Math.max(0, Math.min(Number(value) || 0, owned)));
   updateCountNodes();
 }
-
 function onCollected(event) {
   const itemId = event.detail?.itemId;
   const amount = Math.max(0, Number(event.detail?.amount || 0));
   if (!itemId || amount <= 0) return;
-
-  if (DEV_MODE) {
-    ownedCounts.set(itemId, getOwned(itemId) + amount);
-  }
+  if (DEV_MODE) ownedCounts.set(itemId, getOwned(itemId) + amount);
   selectedCounts.set(itemId, 0);
-  setTimeout(updateCountNodes, 0);
+  setTimeout(() => { updateCountNodes(); localizeDiscoveryText(); }, 0);
 }
-
 function onInventoryOpened(event) {
   const item = event.target.closest?.('[data-item]');
   if (!item) return;
   const itemId = item.dataset.item;
-  if (!itemId) return;
-  if (getOwned(itemId) <= 0) return;
+  if (!itemId || getOwned(itemId) <= 0) return;
   setSelected(itemId, 0);
 }
-
 function onFeedOrEmpower(event) {
   const button = event.target.closest?.('[data-feed-target], [data-empower-target]');
   if (!button) return;
-
   const monsterId = button.dataset.feedTarget || button.dataset.empowerTarget;
   if (!discoveredIds().has(monsterId)) {
     event.preventDefault();
     event.stopImmediatePropagation();
     return;
   }
-
   const itemId = button.dataset.itemId;
   if (itemId) setSelected(itemId, 1);
 }
-
 function onConfirm(event) {
   const button = event.target.closest?.('[data-confirm-ok]');
   if (!button) return;
   const modal = document.querySelector('#use-confirm-modal');
   const itemId = modal?.dataset.itemId;
   if (!itemId) return;
-
-  // inventory-ui consumes the real item and then re-renders.
   setTimeout(() => {
     selectedCounts.set(itemId, 0);
-    if (DEV_MODE) {
-      const current = getOwned(itemId);
-      ownedCounts.set(itemId, Math.max(0, current - 1));
-    }
+    if (DEV_MODE) ownedCounts.set(itemId, Math.max(0, getOwned(itemId) - 1));
     updateCountNodes();
   }, 30);
 }
-
-function observeInventory() {
-  const root = document.querySelector('#inventory-modal') || document.body;
-  const observer = new MutationObserver(() => updateCountNodes());
-  observer.observe(root, { childList: true, subtree: true, characterData: true });
-}
-
 function install() {
   if (installed) return;
   installed = true;
-
   document.addEventListener('click', onFeedOrEmpower, true);
   document.addEventListener('click', onInventoryOpened, false);
   document.addEventListener('click', onConfirm, false);
   window.addEventListener('shanhaijing:item-collected', onCollected);
-
-  observeInventory();
-  const textObserver = new MutationObserver(localizeDiscoveryText);
-  textObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
-  setTimeout(() => { updateCountNodes(); localizeDiscoveryText(); }, 0);
+  updateCountNodes();
+  localizeDiscoveryText();
 }
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', install, { once: true });
-} else {
-  install();
-}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+else install();
