@@ -422,11 +422,11 @@ function drawMonsterMarkers(now) {
     ctx.strokeStyle = "rgba(255,236,151,.72)";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(monster.position.x, monster.position.y, pulse, 0, Math.PI * 2);
+    ctx.arc(monster.position.x, monster.position.y, pulse, 0, Math.PI*2);
     ctx.stroke();
     ctx.fillStyle = "#fff0ae";
     ctx.beginPath();
-    ctx.arc(monster.position.x, monster.position.y, 7, 0, Math.PI * 2);
+    ctx.arc(monster.position.x, monster.position.y, 7, 0, Math.PI*2);
     ctx.fill();
     ctx.fillStyle = "rgba(8,25,19,.78)";
     ctx.fillRect(monster.position.x-58, monster.position.y+44, 116, 34);
@@ -522,6 +522,34 @@ function discoveryAtScreenPoint(x, y) {
   ) ?? null;
 }
 
+function interactionTargetAtScreenPoint(x, y) {
+  const p = worldAt(x, y);
+  const candidates = [];
+
+  const monster = monsterAtScreenPoint(x, y);
+  if (monster) {
+    candidates.push({
+      type: "monster",
+      value: monster,
+      score: Math.hypot(p.x - monster.position.x, p.y - monster.position.y)
+    });
+  }
+
+  const spot = getDiscoverySpots(currentMapId).find(candidate => {
+    if (camera.zoom < Number(candidate.discoveryZoom || 1)) return false;
+    return Math.hypot(p.x - candidate.position.x, p.y - candidate.position.y) <= candidate.radius;
+  });
+  if (spot) {
+    candidates.push({
+      type: "item",
+      value: spot,
+      score: Math.hypot(p.x - spot.position.x, p.y - spot.position.y)
+    });
+  }
+
+  return candidates.sort((a, b) => a.score - b.score || (a.type === "item" ? -1 : 1))[0] ?? null;
+}
+
 function renderCollection() {
   const total = monsters.length;
   const found = monsters.filter(monster => discoveredMonsters.has(monster.id)).length;
@@ -542,8 +570,9 @@ canvas.addEventListener("click", event => {
   if (suppressClick) return;
   const p = point(event);
 
-  const monster = monsterAtScreenPoint(p.x, p.y);
-  if (monster) {
+  const target = interactionTargetAtScreenPoint(p.x, p.y);
+  if (target?.type === "monster") {
+    const monster = target.value;
     if (!discoveredMonsters.has(monster.id)) {
       discoveredMonsters.add(monster.id);
       saveDiscovered();
@@ -557,7 +586,7 @@ canvas.addEventListener("click", event => {
     return;
   }
 
-  const spot = discoveryAtScreenPoint(p.x, p.y);
+  const spot = target?.type === "item" ? target.value : null;
   if (!spot) return;
 
   const result = collectDiscovery(spot);
@@ -568,8 +597,12 @@ canvas.addEventListener("click", event => {
     return;
   }
 
-  showDiscoveryToast("取得道具", `${spot.itemId} ×${result.amount} · 60 秒後可再次取得`, "✦");
-  showStatus(`取得 ${spot.itemId} ×${result.amount}`, 1800);
+  showDiscoveryToast(
+    "取得道具",
+    `${result.itemName} ×${result.amount} · 60 秒後可再次取得`,
+    result.itemIcon
+  );
+  showStatus(`取得 ${result.itemName} ×${result.amount}`, 1800);
 });
 
 collectionButton?.addEventListener("click", () => {
