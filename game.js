@@ -2,6 +2,7 @@ import { monsters } from "./data/monsters.js";
 import { currentMapId as initialMapId, getMapById, getMonsterPlacements, getMapEntrances } from "./data/maps.js";
 import { getMonsterById } from "./data/monsters.js";
 import { itemById } from "./data/items.js";
+import { assetIconMarkup } from "./asset-icon-markup.mjs";
 import {
   getDiscoverySpots,
   collectDiscovery,
@@ -62,12 +63,6 @@ function drawAssetOrEmoji(asset, fallback, size, x = 0, y = 0) {
     ctx.fillText(fallback || "◈", x, y);
   }
   return false;
-}
-
-function assetIconMarkup(entity, fallback = "◈", extraClass = "") {
-  const emoji = entity?.icon || fallback;
-  if (!entity?.asset) return `<span class="asset-fallback">${emoji}</span>`;
-  return `<span class="asset-icon ${extraClass}"><img src="${entity.asset}" alt="" loading="eager" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="asset-fallback" hidden>${emoji}</span></span>`;
 }
 
 function syncMapBackground() {

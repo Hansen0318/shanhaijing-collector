@@ -1,6 +1,7 @@
 import { items, itemById } from './data/items.js';
 import { createProgressionState, applyFeed, equipEmpowerment, talentDefinitions, baseMonsterStats } from './data/progression.js';
 import { getMonsterById } from './data/monsters.js';
+import { assetIconMarkup } from './asset-icon-markup.mjs';
 
 const DEV_MODE = new URLSearchParams(location.search).get('dev') === '1';
 const INVENTORY_KEY = 'shanhaijing_inventory_v1';
@@ -18,12 +19,6 @@ const monsterIcons = {
   'fu-zhu': '🦌',
   'bi-fang': '🐦'
 };
-
-function assetIconMarkup(entity, fallback = '◈', extraClass = '') {
-  const emoji = entity?.icon || fallback;
-  if (!entity?.asset) return `<span class="asset-fallback">${emoji}</span>`;
-  return `<span class="asset-icon ${extraClass}"><img src="${entity.asset}" alt="" loading="eager" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="asset-fallback" hidden>${emoji}</span></span>`;
-}
 
 const statNames = {
   perception: '感知',
